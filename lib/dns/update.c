@@ -1846,6 +1846,29 @@ dns_update_signatures(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 	return (result);
 }
 
+static isc_stdtime_t
+epoch_to_yyyymmdd(isc_stdtime_t J) {
+	isc_stdtime_t f, e, g, h, D, M, Y;
+
+	/*
+	 * Convert to JD
+	 */
+	J = 2440588 + (J / 86400);
+
+	/*
+	 * Unpack the serial into its year, month, and day components
+	 */
+	f = J + 1401 + (((4 * J + 274277) / 146097) * 3) / 4 - 38;
+	e = 4 * f + 3;
+	g = e % 1461 / 4;
+	h = 5 * g + 2;
+	D = (h % 153) / 5 + 1;
+	M = (h / 153 + 2) % 12 + 1;
+	Y = e / 1461 - 4716 + (12 + 2 - M) / 12;
+
+	return (Y * 10000 + M * 100 + D);
+}
+
 isc_uint32_t
 dns_update_soaserial(isc_uint32_t serial, dns_updatemethod_t method) {
 	isc_stdtime_t now;
@@ -1854,6 +1877,14 @@ dns_update_soaserial(isc_uint32_t serial, dns_updatemethod_t method) {
 		isc_stdtime_get(&now);
 		if (now != 0 && isc_serial_gt(now, serial))
 			return (now);
+	} else if (method == dns_updatemethod_yyyymmddvv) {
+		isc_uint32_t new_serial;
+
+		isc_stdtime_get(&now);
+		new_serial = epoch_to_yyyymmdd(now) * 100;
+
+		if (new_serial != 0 && isc_serial_gt(new_serial, serial))
+			return (new_serial);
 	}
 
 	/* RFC1982 */
