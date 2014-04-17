@@ -256,6 +256,75 @@ ATF_TC_BODY(unixtime_zero, tc) {
 	dns_test_end();
 }
 
+ATF_TC(past_to_yyyymmddvv);
+ATF_TC_HEAD(past_to_yyyymmddvv, tc) {
+  atf_tc_set_md_var(tc, "descr", "past to yyyymmddvv");
+}
+ATF_TC_BODY(past_to_yyyymmddvv, tc) {
+	isc_uint32_t old;
+	isc_uint32_t new;
+	isc_result_t result;
+
+	UNUSED(tc);
+
+	set_mystdtime(2014, 4, 17);
+	old = mystdtime - 86400;
+
+	result = dns_test_begin(NULL, ISC_FALSE);
+	ATF_REQUIRE_EQ(result, ISC_R_SUCCESS);
+	new = dns_update_soaserial(old, dns_updatemethod_yyyymmddvv);
+	ATF_REQUIRE_EQ(isc_serial_lt(old, new), ISC_TRUE);
+	ATF_CHECK(new != 0);
+	ATF_REQUIRE_EQ(new, 2014041700);
+	dns_test_end();
+}
+
+ATF_TC(now_to_yyyymmddvv);
+ATF_TC_HEAD(now_to_yyyymmddvv, tc) {
+  atf_tc_set_md_var(tc, "descr", "now to yyyymmddvv");
+}
+ATF_TC_BODY(now_to_yyyymmddvv, tc) {
+	isc_uint32_t old;
+	isc_uint32_t new;
+	isc_result_t result;
+
+	UNUSED(tc);
+
+	set_mystdtime(2014, 4, 17);
+	old = mystdtime;
+
+	result = dns_test_begin(NULL, ISC_FALSE);
+	ATF_REQUIRE_EQ(result, ISC_R_SUCCESS);
+	new = dns_update_soaserial(old, dns_updatemethod_yyyymmddvv);
+	ATF_REQUIRE_EQ(isc_serial_lt(old, new), ISC_TRUE);
+	ATF_CHECK(new != 0);
+	ATF_REQUIRE_EQ(new, 2014041701);
+	dns_test_end();
+}
+
+ATF_TC(future_to_yyyymmddvv);
+ATF_TC_HEAD(future_to_yyyymmddvv, tc) {
+  atf_tc_set_md_var(tc, "descr", "future to yyyymmddvv");
+}
+ATF_TC_BODY(future_to_yyyymmddvv, tc) {
+	isc_uint32_t old;
+	isc_uint32_t new;
+	isc_result_t result;
+
+	UNUSED(tc);
+
+	set_mystdtime(2014, 4, 17);
+	old = mystdtime + 86400;
+
+	result = dns_test_begin(NULL, ISC_FALSE);
+	ATF_REQUIRE_EQ(result, ISC_R_SUCCESS);
+	new = dns_update_soaserial(old, dns_updatemethod_yyyymmddvv);
+	ATF_REQUIRE_EQ(isc_serial_lt(old, new), ISC_TRUE);
+	ATF_CHECK(new != 0);
+	ATF_REQUIRE_EQ(new, 2014041800 + 1);
+	dns_test_end();
+}
+
 /*
  * Main
  */
@@ -269,6 +338,9 @@ ATF_TP_ADD_TCS(tp) {
 	ATF_TP_ADD_TC(tp, undefined_plus1_to_unix);
 	ATF_TP_ADD_TC(tp, undefined_minus1_to_unix);
 	ATF_TP_ADD_TC(tp, unixtime_zero);
+	ATF_TP_ADD_TC(tp, past_to_yyyymmddvv);
+	ATF_TP_ADD_TC(tp, now_to_yyyymmddvv);
+	ATF_TP_ADD_TC(tp, future_to_yyyymmddvv);
 
 	return (atf_no_error());
 }
